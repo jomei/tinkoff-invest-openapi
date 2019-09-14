@@ -1,6 +1,7 @@
 package tinkoff_invest_openapi
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -9,7 +10,10 @@ import (
 )
 
 const (
-	url = "https://api-invest.tinkoff.ru/openapi/sandbox/sandbox/register"
+	url         = "https://api-invest.tinkoff.ru/openapi/sandbox/sandbox"
+	registerUrl = url + "/register"
+	balanceUrl  = url + "/balance"
+	timeout     = 10
 )
 
 type Connection struct {
@@ -29,10 +33,10 @@ type Register struct {
 
 func (conn *Connection) Register() (*Register, error) {
 	client := http.Client{
-		Timeout: 10,
+		Timeout: timeout,
 	}
 
-	req, err := http.NewRequest("POST", url, nil)
+	req, err := http.NewRequest("POST", registerUrl, nil)
 
 	if err != nil {
 		return nil, err
@@ -67,4 +71,54 @@ func (conn *Connection) Register() (*Register, error) {
 	}
 
 	return &register, nil
+}
+
+type Balance struct {
+	TrackingID string `json:"trackingId"`
+	Status     string `json:"status"`
+}
+
+func (conn *Connection) Balance(currency string, amount float64) (*Balance, error) {
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	type bodyStruct struct {
+		Currency string  `json:"currency"`
+		Amount   float64 `json:"amount"`
+	}
+
+	body, err := json.Marshal(bodyStruct{Currency: currency, Amount: amount})
+
+	req, err := http.NewRequest("POST", balanceUrl, bytes.NewBuffer(body))
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Bearer"+conn.token)
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Balance, bad response code '%s' from '%s'", resp.Status, url)
+		return nil, nil
+	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Can't read balance response: %s", err)
+	}
+
+	var balance Balance
+	err = json.Unmarshal(respBody, &balance)
+
+	if err != nil {
+		log.Fatalf("Can't unmarshal balance response: '%s' \nwith error: %s", string(respBody), err)
+	}
+
+	return &balance, nil
 }
