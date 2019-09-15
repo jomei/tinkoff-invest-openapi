@@ -10,10 +10,12 @@ import (
 )
 
 const (
-	url         = "https://api-invest.tinkoff.ru/openapi/sandbox/sandbox"
-	registerUrl = url + "/register"
-	balanceUrl  = url + "/balance"
-	timeout     = 10
+	url                  = "https://api-invest.tinkoff.ru/openapi/sandbox"
+	registerUrl          = url + "/register"
+	currenciesBalanceUrl = url + "/currencies/balance"
+	positionsBalanceUrl  = url + "/positions/balance"
+	clearUrl             = url + "/clear"
+	timeout              = 10
 )
 
 type Connection struct {
@@ -26,12 +28,12 @@ func NewConnection(token string) *Connection {
 	}
 }
 
-type Register struct {
+type Response struct {
 	TrackingID string `json:"trackingId"`
 	Status     string `json:"status"`
 }
 
-func (conn *Connection) Register() (*Register, error) {
+func (conn *Connection) Register() (*Response, error) {
 	client := http.Client{
 		Timeout: timeout,
 	}
@@ -59,7 +61,7 @@ func (conn *Connection) Register() (*Register, error) {
 		log.Fatalf("Can't read register response: %s", err)
 	}
 
-	var register Register
+	var register Response
 	err = json.Unmarshal(respBody, &register)
 
 	if err != nil {
@@ -73,24 +75,19 @@ func (conn *Connection) Register() (*Register, error) {
 	return &register, nil
 }
 
-type Balance struct {
-	TrackingID string `json:"trackingId"`
-	Status     string `json:"status"`
-}
-
-func (conn *Connection) Balance(currency string, amount float64) (*Balance, error) {
+func (conn *Connection) CurrencyBalance(currency string, balance float64) (*Response, error) {
 	client := http.Client{
 		Timeout: timeout,
 	}
 
 	type bodyStruct struct {
 		Currency string  `json:"currency"`
-		Amount   float64 `json:"amount"`
+		Balance  float64 `json:"balance"`
 	}
 
-	body, err := json.Marshal(bodyStruct{Currency: currency, Amount: amount})
+	body, err := json.Marshal(bodyStruct{Currency: currency, Balance: balance})
 
-	req, err := http.NewRequest("POST", balanceUrl, bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", currenciesBalanceUrl, bytes.NewBuffer(body))
 
 	if err != nil {
 		return nil, err
@@ -113,12 +110,99 @@ func (conn *Connection) Balance(currency string, amount float64) (*Balance, erro
 		log.Fatalf("Can't read balance response: %s", err)
 	}
 
-	var balance Balance
+	var b Response
 	err = json.Unmarshal(respBody, &balance)
 
 	if err != nil {
 		log.Fatalf("Can't unmarshal balance response: '%s' \nwith error: %s", string(respBody), err)
 	}
 
-	return &balance, nil
+	return &b, nil
+}
+
+func (conn *Connection) PositionBalance(figi string, balance float64) (*Response, error) {
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	type bodyStruct struct {
+		Balance float64 `json:"balance"`
+		Figi    string  `json:"figi"`
+	}
+
+	body, err := json.Marshal(bodyStruct{Figi: figi, Balance: balance})
+
+	req, err := http.NewRequest("POST", positionsBalanceUrl, bytes.NewBuffer(body))
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Bearer"+conn.token)
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Balance, bad response code '%s' from '%s'", resp.Status, url)
+		return nil, nil
+	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Can't read balance response: %s", err)
+	}
+
+	var b Response
+	err = json.Unmarshal(respBody, &balance)
+
+	if err != nil {
+		log.Fatalf("Can't unmarshal balance response: '%s' \nwith error: %s", string(respBody), err)
+	}
+
+	return &b, nil
+}
+
+func (conn *Connection) Clear() (*Response, error) {
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	req, err := http.NewRequest("POST", clearUrl, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Bearer"+conn.token)
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Clear, bad response code '%s' from '%s'", resp.Status, url)
+		return nil, nil
+	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Can't read clear response: %s", err)
+	}
+
+	var clear Response
+	err = json.Unmarshal(respBody, &resp)
+
+	if err != nil {
+		log.Fatalf("Can't unmarshal clear response: '%s' \nwith error: %s", string(respBody), err)
+	}
+
+	if strings.ToUpper(resp.Status) != "OK" {
+		log.Fatalf("Clear failed, trackingId: '%s'", clear.TrackingID)
+	}
+
+	return &clear, nil
 }
