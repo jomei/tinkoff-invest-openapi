@@ -53,7 +53,6 @@ func (conn *Connection) Register() (*Response, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		log.Fatalf("Register, bad response code '%s' from '%s'", resp.Status, url)
-		return nil, nil
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
