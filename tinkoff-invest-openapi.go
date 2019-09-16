@@ -10,11 +10,13 @@ import (
 )
 
 const (
-	url                  = "https://api-invest.tinkoff.ru/openapi/sandbox"
-	registerUrl          = url + "/register"
-	currenciesBalanceUrl = url + "/currencies/balance"
-	positionsBalanceUrl  = url + "/positions/balance"
-	clearUrl             = url + "/clear"
+	url                  = "https://api-invest.tinkoff.ru"
+	sandboxUrl           = url + "/openapi/sandbox"
+	registerUrl          = sandboxUrl + "/register"
+	currenciesBalanceUrl = sandboxUrl + "/currencies/balance"
+	positionsBalanceUrl  = sandboxUrl + "/positions/balance"
+	clearUrl             = sandboxUrl + "/clear"
+	orderUrl             = url + "/clear"
 	timeout              = 10
 )
 
@@ -33,7 +35,23 @@ type Response struct {
 	Status     string `json:"status"`
 }
 
-func (conn *Connection) Register() (*Response, error) {
+type OrdersResponse struct {
+	Response
+	Payload []*Order
+}
+
+type Order struct {
+	Id            string  `json:"orderId"`
+	Figi          string  `json:"figi"`
+	Operation     string  `json:"operation"`
+	Status        string  `json:"status"`
+	RequestedLots int32   `json:"requestedLots"`
+	ExecutedLots  int32   `json:"executedLots"`
+	Type          string  `json:"type"`
+	Price         float64 `json:"prise"`
+}
+
+func (conn *Connection) SandboxRegister() (*Response, error) {
 	client := http.Client{
 		Timeout: timeout,
 	}
@@ -74,7 +92,7 @@ func (conn *Connection) Register() (*Response, error) {
 	return &register, nil
 }
 
-func (conn *Connection) CurrencyBalance(currency string, balance float64) (*Response, error) {
+func (conn *Connection) SandboxCurrencyBalance(currency string, balance float64) (*Response, error) {
 	client := http.Client{
 		Timeout: timeout,
 	}
@@ -119,7 +137,7 @@ func (conn *Connection) CurrencyBalance(currency string, balance float64) (*Resp
 	return &b, nil
 }
 
-func (conn *Connection) PositionBalance(figi string, balance float64) (*Response, error) {
+func (conn *Connection) SandboxPositionBalance(figi string, balance float64) (*Response, error) {
 	client := http.Client{
 		Timeout: timeout,
 	}
@@ -164,7 +182,7 @@ func (conn *Connection) PositionBalance(figi string, balance float64) (*Response
 	return &b, nil
 }
 
-func (conn *Connection) Clear() (*Response, error) {
+func (conn *Connection) SandboxClear() (*Response, error) {
 	client := http.Client{
 		Timeout: timeout,
 	}
@@ -204,4 +222,42 @@ func (conn *Connection) Clear() (*Response, error) {
 	}
 
 	return &clear, nil
+}
+
+func (conn *Connection) GetOrders() (*OrdersResponse, error) {
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	req, err := http.NewRequest("POST", orderUrl, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Bearer"+conn.token)
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Balance, bad response code '%s' from '%s'", resp.Status, url)
+		return nil, nil
+	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Can't read balance response: %s", err)
+	}
+
+	var b OrdersResponse
+	err = json.Unmarshal(respBody, &b)
+
+	if err != nil {
+		log.Fatalf("Can't unmarshal balance response: '%s' \nwith error: %s", string(respBody), err)
+	}
+
+	return &b, nil
 }
