@@ -16,7 +16,8 @@ const (
 	currenciesBalanceUrl = sandboxUrl + "/currencies/balance"
 	positionsBalanceUrl  = sandboxUrl + "/positions/balance"
 	clearUrl             = sandboxUrl + "/clear"
-	orderUrl             = url + "/clear"
+	orderUrl             = url + "/orders"
+	limitOrderUrl        = orderUrl + "/limit-order"
 	timeout              = 10
 )
 
@@ -37,7 +38,7 @@ type Response struct {
 
 type OrdersResponse struct {
 	Response
-	Payload []*Order
+	Payload []*Order `json:"payload"`
 }
 
 type Order struct {
@@ -49,6 +50,14 @@ type Order struct {
 	ExecutedLots  int32   `json:"executedLots"`
 	Type          string  `json:"type"`
 	Price         float64 `json:"prise"`
+}
+
+type LimitOrderResponse struct {
+	Response
+	Payload []*LimitOrder `json:"payload"`
+}
+
+type LimitOrder struct {
 }
 
 func (conn *Connection) SandboxRegister() (*Response, error) {
@@ -243,21 +252,59 @@ func (conn *Connection) GetOrders() (*OrdersResponse, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Balance, bad response code '%s' from '%s'", resp.Status, url)
+		log.Fatalf("Get order, bad response code '%s' from '%s'", resp.Status, url)
 		return nil, nil
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("Can't read balance response: %s", err)
+		log.Fatalf("Can't read get order response: %s", err)
 	}
 
-	var b OrdersResponse
-	err = json.Unmarshal(respBody, &b)
+	var or OrdersResponse
+	err = json.Unmarshal(respBody, &or)
 
 	if err != nil {
-		log.Fatalf("Can't unmarshal balance response: '%s' \nwith error: %s", string(respBody), err)
+		log.Fatalf("Can't unmarshal get order response: '%s' \nwith error: %s", string(respBody), err)
 	}
 
-	return &b, nil
+	return &or, nil
+}
+
+func (conn *Connection) limitOrder(figi string, lots int32, operation string, price float64) (*LimitOrderResponse, error) {
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	req, err := http.NewRequest("POST", limitOrderUrl, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Bearer"+conn.token)
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Get order, bad response code '%s' from '%s'", resp.Status, url)
+		return nil, nil
+	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Can't read get order response: %s", err)
+	}
+
+	var lor LimitOrderResponse
+	err = json.Unmarshal(respBody, &lor)
+
+	if err != nil {
+		log.Fatalf("Can't unmarshal get order response: '%s' \nwith error: %s", string(respBody), err)
+	}
+
+	return &lor, nil
 }
