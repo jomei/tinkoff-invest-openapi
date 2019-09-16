@@ -42,7 +42,7 @@ type OrdersResponse struct {
 }
 
 type Order struct {
-	Id            string  `json:"orderId"`
+	OrderId       string  `json:"orderId"`
 	Figi          string  `json:"figi"`
 	Operation     string  `json:"operation"`
 	Status        string  `json:"status"`
@@ -52,12 +52,24 @@ type Order struct {
 	Price         float64 `json:"prise"`
 }
 
+type Money struct {
+	Currency string  `json:"currency"`
+	Value    float64 `json:"value"`
+}
+
 type LimitOrderResponse struct {
 	Response
 	Payload []*LimitOrder `json:"payload"`
 }
 
 type LimitOrder struct {
+	OrderId       string `json:"orderId"`
+	Operation     string `json:"operation"`
+	Status        string `json:"status"`
+	RejectReason  string `json:"rejectReason"`
+	RequestedLots int32  `json:"requestedLots"`
+	ExecutedLots  int32  `json:"executedLots"`
+	Commission    Money  `json:"commission"`
 }
 
 func (conn *Connection) SandboxRegister() (*Response, error) {
@@ -276,7 +288,15 @@ func (conn *Connection) limitOrder(figi string, lots int32, operation string, pr
 		Timeout: timeout,
 	}
 
-	req, err := http.NewRequest("POST", limitOrderUrl, nil)
+	type bodyStruct struct {
+		Figi      string  `json:"figi"`
+		Lots      int32   `json:"lots"`
+		Operation string  `json:"string"`
+		Price     float64 `json:"price"`
+	}
+	body, err := json.Marshal(bodyStruct{Figi: figi, Lots: lots, Operation: operation, Price: price})
+
+	req, err := http.NewRequest("POST", limitOrderUrl, bytes.NewBuffer(body))
 
 	if err != nil {
 		return nil, err
