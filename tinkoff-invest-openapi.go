@@ -18,6 +18,7 @@ const (
 	clearUrl             = sandboxUrl + "/clear"
 	orderUrl             = url + "/orders"
 	limitOrderUrl        = orderUrl + "/limit-order"
+	cancelOrderUrl       = orderUrl + "/cancel"
 	timeout              = 10
 )
 
@@ -250,7 +251,7 @@ func (conn *Connection) GetOrders() (*OrdersResponse, error) {
 		Timeout: timeout,
 	}
 
-	req, err := http.NewRequest("POST", orderUrl, nil)
+	req, err := http.NewRequest("GET", orderUrl, nil)
 
 	if err != nil {
 		return nil, err
@@ -310,7 +311,7 @@ func (conn *Connection) limitOrder(figi string, lots int32, operation string, pr
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Get order, bad response code '%s' from '%s'", resp.Status, url)
+		log.Fatalf("Limit order, bad response code '%s' from '%s'", resp.Status, url)
 		return nil, nil
 	}
 
@@ -323,8 +324,51 @@ func (conn *Connection) limitOrder(figi string, lots int32, operation string, pr
 	err = json.Unmarshal(respBody, &lor)
 
 	if err != nil {
-		log.Fatalf("Can't unmarshal get order response: '%s' \nwith error: %s", string(respBody), err)
+		log.Fatalf("Can't unmarshal limit order response: '%s' \nwith error: %s", string(respBody), err)
 	}
 
 	return &lor, nil
+}
+
+func (conn *Connection) orderCancel(orderId string) (*Response, error) {
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	type bodyStruct struct {
+		OrderId string `json:"orderId"`
+	}
+	body, err := json.Marshal(bodyStruct{OrderId: orderId})
+
+	req, err := http.NewRequest("POST", cancelOrderUrl, bytes.NewBuffer(body))
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Bearer"+conn.token)
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Cancel order, bad response code '%s' from '%s'", resp.Status, url)
+		return nil, nil
+	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Can't read cancel order response: %s", err)
+	}
+
+	var r Response
+	err = json.Unmarshal(respBody, &r)
+
+	if err != nil {
+		log.Fatalf("Can't unmarshal cancel order response: '%s' \nwith error: %s", string(respBody), err)
+	}
+
+	return &r, nil
 }
