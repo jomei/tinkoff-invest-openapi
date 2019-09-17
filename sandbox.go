@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+const (
+	sandboxUrl           = url + "/openapi/sandbox"
+	registerUrl          = sandboxUrl + "/register"
+	currenciesBalanceUrl = sandboxUrl + "/currencies/balance"
+	positionsBalanceUrl  = sandboxUrl + "/positions/balance"
+	clearUrl             = sandboxUrl + "/clear"
+)
+
 func (conn *Connection) SandboxRegister() (*Response, error) {
 	client := http.Client{
 		Timeout: timeout,

@@ -1,16 +1,8 @@
 package tinkoff_invest_openapi
 
 const (
-	url                  = "https://api-invest.tinkoff.ru"
-	sandboxUrl           = url + "/openapi/sandbox"
-	registerUrl          = sandboxUrl + "/register"
-	currenciesBalanceUrl = sandboxUrl + "/currencies/balance"
-	positionsBalanceUrl  = sandboxUrl + "/positions/balance"
-	clearUrl             = sandboxUrl + "/clear"
-	orderUrl             = url + "/orders"
-	limitOrderUrl        = orderUrl + "/limit-order"
-	cancelOrderUrl       = orderUrl + "/cancel"
-	timeout              = 10
+	url     = "https://api-invest.tinkoff.ru"
+	timeout = 10
 )
 
 type Connection struct {

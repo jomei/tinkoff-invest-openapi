@@ -8,9 +8,15 @@ import (
 	"net/http"
 )
 
+const (
+	orderUrl       = url + "/orders"
+	limitOrderUrl  = orderUrl + "/limit-order"
+	cancelOrderUrl = orderUrl + "/cancel"
+)
+
 type OrdersResponse struct {
 	Response
-	Payload []*Order `json:"payload"`
+	Payload []Order `json:"payload"`
 }
 
 type Order struct {
