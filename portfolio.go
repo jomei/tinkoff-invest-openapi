@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	portfolioUrl          = url + "/portfolio"
-	portfolioCurreniesUrl = portfolioUrl + "/currencies"
+	portfolioUrl           = url + "/portfolio"
+	portfolioCurrensiesUrl = portfolioUrl + "/currencies"
 )
 
 type PortfolioResponse struct {
@@ -86,7 +86,7 @@ func (conn *Connection) GetPortfolioCurrencies() (*PortfolioCurrenciesResponse, 
 		Timeout: timeout,
 	}
 
-	req, err := http.NewRequest("GET", portfolioCurreniesUrl, nil)
+	req, err := http.NewRequest("GET", portfolioCurrensiesUrl, nil)
 
 	if err != nil {
 		return nil, err
