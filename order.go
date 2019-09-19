@@ -1,11 +1,9 @@
 package tinkoff_invest_openapi
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"net/http"
 )
 
 const (
@@ -46,26 +44,10 @@ type LimitOrder struct {
 }
 
 func (conn *Connection) GetOrders() (*OrdersResponse, error) {
-	client := http.Client{
-		Timeout: timeout,
-	}
-
-	req, err := http.NewRequest("GET", orderUrl, nil)
+	resp, err := doRequest(conn, orderUrl, "GET", nil)
 
 	if err != nil {
 		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer"+conn.token)
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Get order, bad response code '%s' from '%s'", resp.Status, url)
-		return nil, nil
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
@@ -84,34 +66,17 @@ func (conn *Connection) GetOrders() (*OrdersResponse, error) {
 }
 
 func (conn *Connection) limitOrder(figi string, lots int32, operation string, price float64) (*LimitOrderResponse, error) {
-	client := http.Client{
-		Timeout: timeout,
-	}
-
 	type bodyStruct struct {
 		Figi      string  `json:"figi"`
 		Lots      int32   `json:"lots"`
 		Operation string  `json:"string"`
 		Price     float64 `json:"price"`
 	}
-	body, err := json.Marshal(bodyStruct{Figi: figi, Lots: lots, Operation: operation, Price: price})
 
-	req, err := http.NewRequest("POST", limitOrderUrl, bytes.NewBuffer(body))
-
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer"+conn.token)
-	resp, err := client.Do(req)
+	resp, err := doRequest(conn, limitOrderUrl, "POST", bodyStruct{Figi: figi, Lots: lots, Operation: operation, Price: price})
 
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Limit order, bad response code '%s' from '%s'", resp.Status, url)
-		return nil, nil
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
@@ -130,31 +95,14 @@ func (conn *Connection) limitOrder(figi string, lots int32, operation string, pr
 }
 
 func (conn *Connection) orderCancel(orderId string) (*Response, error) {
-	client := http.Client{
-		Timeout: timeout,
-	}
-
 	type bodyStruct struct {
 		OrderId string `json:"orderId"`
 	}
-	body, err := json.Marshal(bodyStruct{OrderId: orderId})
 
-	req, err := http.NewRequest("POST", cancelOrderUrl, bytes.NewBuffer(body))
-
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer"+conn.token)
-	resp, err := client.Do(req)
+	resp, err := doRequest(conn, cancelOrderUrl, "POST", bodyStruct{OrderId: orderId})
 
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Cancel order, bad response code '%s' from '%s'", resp.Status, url)
-		return nil, nil
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)

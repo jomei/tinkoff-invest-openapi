@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"net/http"
 )
 
 const (
@@ -31,27 +30,16 @@ type Instrument struct {
 	Currency          string  `json:"currency"`
 }
 
+type GetByFigiResponse struct {
+	Response
+	Payload Instrument `json:"payload"`
+}
+
 func doMarkerRequest(conn *Connection, url string, requestType string) (*InstrumentsResponse, error) {
-	client := http.Client{
-		Timeout: timeout,
-	}
-
-	req, err := http.NewRequest("GET", getStocksUrl, nil)
+	resp, err := doRequest(conn, url, "GET", nil)
 
 	if err != nil {
 		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer"+conn.token)
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("%s, bad response code '%s' from '%s'", requestType, resp.Status, url)
-		return nil, nil
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
@@ -79,4 +67,8 @@ func (conn *Connection) GetBonds() (*InstrumentsResponse, error) {
 
 func (conn *Connection) GetCurrencies() (*InstrumentsResponse, error) {
 	return doMarkerRequest(conn, getCurrenciesUrl, "get currencies")
+}
+
+func (conn *Connection) GetByFigi(figi string) {
+
 }

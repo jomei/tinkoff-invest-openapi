@@ -1,7 +1,6 @@
 package tinkoff_invest_openapi
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -18,25 +17,10 @@ const (
 )
 
 func (conn *Connection) SandboxRegister() (*Response, error) {
-	client := http.Client{
-		Timeout: timeout,
-	}
-
-	req, err := http.NewRequest("POST", registerUrl, nil)
+	resp, err := doRequest(conn, registerUrl, "POST", nil)
 
 	if err != nil {
 		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer"+conn.token)
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Register, bad response code '%s' from '%s'", resp.Status, url)
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
@@ -59,25 +43,12 @@ func (conn *Connection) SandboxRegister() (*Response, error) {
 }
 
 func (conn *Connection) SandboxCurrencyBalance(currency string, balance float64) (*Response, error) {
-	client := http.Client{
-		Timeout: timeout,
-	}
-
 	type bodyStruct struct {
 		Currency string  `json:"currency"`
 		Balance  float64 `json:"balance"`
 	}
 
-	body, err := json.Marshal(bodyStruct{Currency: currency, Balance: balance})
-
-	req, err := http.NewRequest("POST", currenciesBalanceUrl, bytes.NewBuffer(body))
-
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer"+conn.token)
-	resp, err := client.Do(req)
+	resp, err := doRequest(conn, currenciesBalanceUrl, "POST", bodyStruct{Currency: currency, Balance: balance})
 
 	if err != nil {
 		return nil, err
@@ -104,33 +75,15 @@ func (conn *Connection) SandboxCurrencyBalance(currency string, balance float64)
 }
 
 func (conn *Connection) SandboxPositionBalance(figi string, balance float64) (*Response, error) {
-	client := http.Client{
-		Timeout: timeout,
-	}
-
 	type bodyStruct struct {
 		Balance float64 `json:"balance"`
 		Figi    string  `json:"figi"`
 	}
 
-	body, err := json.Marshal(bodyStruct{Figi: figi, Balance: balance})
-
-	req, err := http.NewRequest("POST", positionsBalanceUrl, bytes.NewBuffer(body))
+	resp, err := doRequest(conn, positionsBalanceUrl, "POST", bodyStruct{Figi: figi, Balance: balance})
 
 	if err != nil {
 		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer"+conn.token)
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Balance, bad response code '%s' from '%s'", resp.Status, url)
-		return nil, nil
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
@@ -149,26 +102,10 @@ func (conn *Connection) SandboxPositionBalance(figi string, balance float64) (*R
 }
 
 func (conn *Connection) SandboxClear() (*Response, error) {
-	client := http.Client{
-		Timeout: timeout,
-	}
-
-	req, err := http.NewRequest("POST", clearUrl, nil)
+	resp, err := doRequest(conn, clearUrl, "POST", nil)
 
 	if err != nil {
 		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer"+conn.token)
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Clear, bad response code '%s' from '%s'", resp.Status, url)
-		return nil, nil
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)

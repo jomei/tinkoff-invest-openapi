@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"net/http"
 )
 
 const (
@@ -44,26 +43,10 @@ type Currency struct {
 }
 
 func (conn *Connection) GetPortfolio() (*PortfolioResponse, error) {
-	client := http.Client{
-		Timeout: timeout,
-	}
-
-	req, err := http.NewRequest("GET", portfolioUrl, nil)
+	resp, err := doRequest(conn, portfolioUrl, "GET", nil)
 
 	if err != nil {
 		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer"+conn.token)
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Get portfolio, bad response code '%s' from '%s'", resp.Status, url)
-		return nil, nil
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
@@ -82,26 +65,10 @@ func (conn *Connection) GetPortfolio() (*PortfolioResponse, error) {
 }
 
 func (conn *Connection) GetPortfolioCurrencies() (*PortfolioCurrenciesResponse, error) {
-	client := http.Client{
-		Timeout: timeout,
-	}
-
-	req, err := http.NewRequest("GET", portfolioCurrenciesUrl, nil)
+	resp, err := doRequest(conn, portfolioCurrenciesUrl, "GET", nil)
 
 	if err != nil {
 		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer"+conn.token)
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Get portfolio currencies, bad response code '%s' from '%s'", resp.Status, url)
-		return nil, nil
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
