@@ -21,7 +21,7 @@ type PortfolioResponse struct {
 
 type Position struct {
 	Figi           string  `json:"figi"`
-	Ticket         string  `json:"ticket"`
+	Ticker         string  `json:"ticker"`
 	Isin           string  `json:"isin"`
 	InstrumentType string  `json:"instrumentType"`
 	Balance        float64 `json:"balance"`

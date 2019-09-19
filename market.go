@@ -24,7 +24,7 @@ type MarketResponse struct {
 
 type Instrument struct {
 	Figi              string  `json:"figi"`
-	Ticket            string  `json:"ticket"`
+	Ticker            string  `json:"ticker"`
 	Isin              string  `json:"isin"`
 	MinPriceIncrement float64 `json:"minPriceIncrement"`
 	Lot               int32   `json:"lot"`
