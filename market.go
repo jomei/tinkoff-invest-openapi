@@ -14,7 +14,7 @@ const (
 	getCurrenciesUrl = marketUrl + "/bonds"
 )
 
-type MarketResponse struct {
+type InstrumentsResponse struct {
 	Response
 	Payload struct {
 		Total       float64      `json:"total"`
@@ -31,7 +31,7 @@ type Instrument struct {
 	Currency          string  `json:"currency"`
 }
 
-func doMarkerRequest(conn *Connection, url string, requestType string) (*MarketResponse, error) {
+func doMarkerRequest(conn *Connection, url string, requestType string) (*InstrumentsResponse, error) {
 	client := http.Client{
 		Timeout: timeout,
 	}
@@ -59,7 +59,7 @@ func doMarkerRequest(conn *Connection, url string, requestType string) (*MarketR
 		log.Fatalf("Can't read %s response: %s", requestType, err)
 	}
 
-	var r MarketResponse
+	var r InstrumentsResponse
 	err = json.Unmarshal(respBody, &r)
 
 	if err != nil {
@@ -69,14 +69,14 @@ func doMarkerRequest(conn *Connection, url string, requestType string) (*MarketR
 	return &r, nil
 }
 
-func (conn *Connection) GetStocks() (*MarketResponse, error) {
+func (conn *Connection) GetStocks() (*InstrumentsResponse, error) {
 	return doMarkerRequest(conn, getStocksUrl, "get stocks")
 }
 
-func (conn *Connection) GetBonds() (*MarketResponse, error) {
+func (conn *Connection) GetBonds() (*InstrumentsResponse, error) {
 	return doMarkerRequest(conn, getBondsUrl, "get bonds")
 }
 
-func (conn *Connection) GetCurrencies() (*MarketResponse, error) {
+func (conn *Connection) GetCurrencies() (*InstrumentsResponse, error) {
 	return doMarkerRequest(conn, getCurrenciesUrl, "get currencies")
 }
