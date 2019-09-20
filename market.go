@@ -12,6 +12,8 @@ const (
 	getBondsUrl      = marketUrl + "/bonds"
 	getCurrenciesUrl = marketUrl + "/currencies"
 	getEtfsUrl       = marketUrl + "/etfs"
+	searchUrl        = marketUrl + "/search"
+	getByFigiUrl     = searchUrl + "/by-figi"
 )
 
 type InstrumentsResponse struct {
@@ -74,6 +76,23 @@ func (conn *Connection) GetEtfs() (*InstrumentsResponse, error) {
 	return doMarketRequest(conn, getEtfsUrl, "get etfs")
 }
 
-func (conn *Connection) GetByFigi(figi string) {
+func (conn *Connection) GetByFigi(figi string) (*GetByFigiResponse, error) {
+	type body struct {
+		Figi string `json:"figi"`
+	}
+	resp, err := doRequest(conn, getByFigiUrl, "GET", body{Figi: figi})
+
+	if err != nil {
+		return nil, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	var r GetByFigiResponse
+	err = json.Unmarshal(respBody, &r)
+
+	if err != nil {
+		log.Fatalf("Can't unmarshal %s response: '%s' \nwith error: %s", "get by figi", string(respBody), err)
+	}
+
+	return &r, nil
 
 }
