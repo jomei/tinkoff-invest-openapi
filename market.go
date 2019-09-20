@@ -10,7 +10,8 @@ const (
 	marketUrl        = url + "/market"
 	getStocksUrl     = marketUrl + "/stocks"
 	getBondsUrl      = marketUrl + "/bonds"
-	getCurrenciesUrl = marketUrl + "/bonds"
+	getCurrenciesUrl = marketUrl + "/currencies"
+	getEtfsUrl       = marketUrl + "/etfs"
 )
 
 type InstrumentsResponse struct {
@@ -35,7 +36,7 @@ type GetByFigiResponse struct {
 	Payload Instrument `json:"payload"`
 }
 
-func doMarkerRequest(conn *Connection, url string, requestType string) (*InstrumentsResponse, error) {
+func doMarketRequest(conn *Connection, url string, requestType string) (*InstrumentsResponse, error) {
 	resp, err := doRequest(conn, url, "GET", nil)
 
 	if err != nil {
@@ -58,15 +59,19 @@ func doMarkerRequest(conn *Connection, url string, requestType string) (*Instrum
 }
 
 func (conn *Connection) GetStocks() (*InstrumentsResponse, error) {
-	return doMarkerRequest(conn, getStocksUrl, "get stocks")
+	return doMarketRequest(conn, getStocksUrl, "get stocks")
 }
 
 func (conn *Connection) GetBonds() (*InstrumentsResponse, error) {
-	return doMarkerRequest(conn, getBondsUrl, "get bonds")
+	return doMarketRequest(conn, getBondsUrl, "get bonds")
 }
 
 func (conn *Connection) GetCurrencies() (*InstrumentsResponse, error) {
-	return doMarkerRequest(conn, getCurrenciesUrl, "get currencies")
+	return doMarketRequest(conn, getCurrenciesUrl, "get currencies")
+}
+
+func (conn *Connection) GetEtfs() (*InstrumentsResponse, error) {
+	return doMarketRequest(conn, getEtfsUrl, "get etfs")
 }
 
 func (conn *Connection) GetByFigi(figi string) {
