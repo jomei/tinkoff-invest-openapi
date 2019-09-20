@@ -94,5 +94,24 @@ func (conn *Connection) GetByFigi(figi string) (*GetByFigiResponse, error) {
 	}
 
 	return &r, nil
+}
 
+func (conn *Connection) GetByTicker(ticker string) (*InstrumentsResponse, error) {
+	type body struct {
+		Ticker string `json:"ticker"`
+	}
+	resp, err := doRequest(conn, getByFigiUrl, "GET", body{Ticker: ticker})
+
+	if err != nil {
+		return nil, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	var r InstrumentsResponse
+	err = json.Unmarshal(respBody, &r)
+
+	if err != nil {
+		log.Fatalf("Can't unmarshal %s response: '%s' \nwith error: %s", "get by figi", string(respBody), err)
+	}
+
+	return &r, nil
 }
